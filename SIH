@@ -1,0 +1,1164 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dynamic SIH Cold Chain Digital Twin</title>
+
+<style>
+:root {
+  --bg-dark: #0b0f19;
+  --card-bg: #151d2a;
+  --border-color: #263346;
+  --accent-blue: #38bdf8;
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-yellow: #eab308;
+  --accent-purple: #c084fc;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+header h1 {
+  font-size: 1.4rem;
+  color: var(--accent-blue);
+}
+
+.badge {
+  background: #0369a1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 360px 1fr 380px;
+  gap: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.card h2 {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+  color: var(--text-muted);
+}
+
+.sensor-card {
+  background: #0b0f19;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.sensor-title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sensor-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  margin: 4px 0;
+}
+
+.sensor-value.alert {
+  color: var(--accent-red);
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 120px;
+  background: #050811;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #0b0f19;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: 0.3s;
+  border-radius: 22px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-blue);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.block-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.component-box {
+  background: #0b0f19;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.component-box.active {
+  border-color: var(--accent-blue);
+  background: #131c2e;
+}
+
+.component-box.power-on {
+  border-color: var(--accent-red);
+  background: #2a1215;
+}
+
+.comp-info strong {
+  font-size: 0.85rem;
+  display: block;
+}
+
+.comp-info small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #475569;
+  flex-shrink: 0;
+}
+
+.status-dot.green {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+}
+
+.status-dot.red {
+  background: var(--accent-red);
+  box-shadow: 0 0 8px var(--accent-red);
+}
+
+.status-dot.yellow {
+  background: var(--accent-yellow);
+  box-shadow: 0 0 8px var(--accent-yellow);
+}
+
+.status-dot.purple {
+  background: var(--accent-purple);
+  box-shadow: 0 0 8px var(--accent-purple);
+}
+
+.terminal {
+  background: #050811;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  padding: 12px;
+  border-radius: 6px;
+  height: 320px;
+  overflow-y: auto;
+  color: #4ade80;
+  border: 1px solid var(--border-color);
+}
+
+.terminal .t-alert {
+  color: #f87171;
+  font-weight: bold;
+}
+
+.terminal .t-crypto {
+  color: #c084fc;
+}
+
+.terminal .t-power {
+  color: #fb923c;
+}
+
+.terminal .t-cloud {
+  color: #38bdf8;
+}
+
+.json-preview {
+  background: #050811;
+  color: #38bdf8;
+  font-family: monospace;
+  font-size: 0.75rem;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  white-space: pre-wrap;
+  margin-top: 8px;
+  height: 140px;
+  overflow-y: auto;
+}
+
+.demo-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.demo-buttons button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+}
+
+#spikeBtn {
+  background: #dc2626;
+}
+
+#resetBtn {
+  background: #475569;
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  header h1 {
+    font-size: 1.1rem;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>SIH Cold Chain — Real-Time Dynamic Telemetry Digital Twin</h1>
+  <span class="badge">LIVE FEED: 1 Hz SAMPLING</span>
+</header>
+
+<div class="grid">
+
+  <!-- SENSOR MONITORING PANEL -->
+  <div class="card">
+
+    <h2>Real-Time Sensor Fluctuations</h2>
+
+    <div class="sensor-card">
+
+      <div class="sensor-title">
+        <span>SHT31 Temperature</span>
+        <span>Target: 2.0°C - 8.0°C</span>
+      </div>
+
+      <div id="tempVal" class="sensor-value">
+        4.20 °C
+      </div>
+
+      <canvas id="tempChart"></canvas>
+
+    </div>
+
+    <div class="sensor-card">
+
+      <div class="sensor-title">
+        <span>SHT31 Humidity / Moisture</span>
+        <span>Limit: 85.0%</span>
+      </div>
+
+      <div id="humVal"
+           style="font-size:1.4rem;font-weight:700;color:var(--accent-blue);margin:4px 0;">
+        54.2 %
+      </div>
+
+    </div>
+
+    <div class="sensor-card">
+
+      <div class="sensor-title">
+        <span>AEM10941 Harvester Supercap</span>
+        <span style="color:var(--accent-green)">
+          CHARGING
+        </span>
+      </div>
+
+      <div id="voltVal"
+           style="font-size:1.2rem;font-weight:600;color:var(--text-main);margin-top:4px;">
+        3.284 V
+      </div>
+
+    </div>
+
+    <div class="demo-buttons">
+
+      <button id="spikeBtn">
+        ⚠️ Inject Thermal Breach Spike (11.5°C)
+      </button>
+
+      <button id="resetBtn">
+        ↻ Reset
+      </button>
+
+    </div>
+
+    <div class="toggle-row">
+
+      <span style="font-size:0.85rem">
+        Cellular Signal Loss
+      </span>
+
+      <label class="switch">
+
+        <input type="checkbox" id="netLossToggle">
+
+        <span class="slider"></span>
+
+      </label>
+
+    </div>
+
+  </div>
+
+
+  <!-- HARDWARE CIRCUIT BLOCK DIAGRAM -->
+  <div class="card">
+
+    <h2>Hardware Circuit State</h2>
+
+    <div class="block-diagram">
+
+      <div class="component-box active" id="box-mcu">
+
+        <div class="comp-info">
+
+          <strong>
+            STM32L432KC Ultra-Low-Power MCU
+          </strong>
+
+          <small>
+            Status: Polling I2C1 Sensor Bus
+          </small>
+
+        </div>
+
+        <div class="status-dot green" id="dot-mcu"></div>
+
+      </div>
+
+
+      <div class="component-box" id="box-sht31">
+
+        <div class="comp-info">
+
+          <strong>
+            SHT31 Sensor (Temp & Humidity)
+          </strong>
+
+          <small>
+            Address: 0x44 | Drifting Noise Active
+          </small>
+
+        </div>
+
+        <div class="status-dot green" id="dot-sht31"></div>
+
+      </div>
+
+
+      <div class="component-box" id="box-crypto">
+
+        <div class="comp-info">
+
+          <strong>
+            ATECC608A Crypto Element
+          </strong>
+
+          <small>
+            Address: 0x60 | ECDSA Signature Engine
+          </small>
+
+        </div>
+
+        <div class="status-dot" id="dot-crypto"></div>
+
+      </div>
+
+
+      <div class="component-box" id="box-mosfet">
+
+        <div class="comp-info">
+
+          <strong>
+            AO3401A P-MOSFET Power Gate
+          </strong>
+
+          <small id="mosfetText">
+            Gate Pin: PA4 (HIGH - Modem OFF)
+          </small>
+
+        </div>
+
+        <div class="status-dot" id="dot-mosfet"></div>
+
+      </div>
+
+
+      <div class="component-box" id="box-modem">
+
+        <div class="comp-info">
+
+          <strong>
+            SIM7080G NB-IoT / CAT-M Modem
+          </strong>
+
+          <small id="modemText">
+            State: POWERED DOWN (0 mA)
+          </small>
+
+        </div>
+
+        <div class="status-dot" id="dot-modem"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- TERMINAL & PAYLOAD VIEW -->
+  <div class="card">
+
+    <h2>Firmware Stream & AWS JSON</h2>
+
+    <div class="terminal" id="terminal"></div>
+
+    <div style="margin-top:10px;">
+
+      <label style="font-size:0.75rem;color:var(--text-muted);">
+        Generated AWS IoT Payload:
+      </label>
+
+      <div class="json-preview" id="jsonPreview">
+{
+  "status": "WAITING_FOR_BREACH"
+}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+"use strict";
+
+/* ==============================
+   SIMULATION STATE
+============================== */
+
+const NORMAL_TEMP = 4.2;
+const NORMAL_HUM = 54.2;
+const NORMAL_VOLT = 3.284;
+
+const MIN_TEMP = 2.0;
+const MAX_TEMP = 8.0;
+
+let currentTemp = NORMAL_TEMP;
+let currentHum = NORMAL_HUM;
+let currentVolt = NORMAL_VOLT;
+
+let tempHistory = Array(30).fill(NORMAL_TEMP);
+
+let isExecutingBreach = false;
+
+
+/* ==============================
+   DOM ELEMENTS
+============================== */
+
+const tempVal = document.getElementById("tempVal");
+const humVal = document.getElementById("humVal");
+const voltVal = document.getElementById("voltVal");
+
+const terminal = document.getElementById("terminal");
+const jsonPreview = document.getElementById("jsonPreview");
+
+const canvas = document.getElementById("tempChart");
+const ctx = canvas.getContext("2d");
+
+
+/* ==============================
+   CANVAS
+============================== */
+
+function resizeCanvas() {
+
+  const rect = canvas.getBoundingClientRect();
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  drawChart();
+}
+
+
+/* ==============================
+   LOGGING
+============================== */
+
+function log(msg, type = "") {
+
+  const time = new Date().toLocaleTimeString();
+
+  const line = document.createElement("div");
+
+  if (type) {
+    line.className = type;
+  }
+
+  line.textContent = `[${time}] ${msg}`;
+
+  terminal.appendChild(line);
+
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+
+/* ==============================
+   TEMPERATURE CHART
+============================== */
+
+function drawChart() {
+
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+
+  if (!width || !height) {
+    return;
+  }
+
+  ctx.clearRect(0, 0, width, height);
+
+  /* Upper limit line = 8°C */
+
+  ctx.beginPath();
+
+  ctx.strokeStyle = "#263346";
+
+  ctx.setLineDash([2, 2]);
+
+  const limitY =
+    height - (height * (MAX_TEMP / 15));
+
+  ctx.moveTo(0, limitY);
+  ctx.lineTo(width, limitY);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+
+  /* Temperature line */
+
+  ctx.beginPath();
+
+  ctx.strokeStyle =
+    (currentTemp > MAX_TEMP || currentTemp < MIN_TEMP)
+      ? "#ef4444"
+      : "#22c55e";
+
+  ctx.lineWidth = 2;
+
+
+  for (let i = 0; i < tempHistory.length; i++) {
+
+    const x =
+      i * (width / (tempHistory.length - 1));
+
+    /* Keep chart inside 0–15°C range */
+
+    const plottedTemp =
+      Math.max(0, Math.min(15, tempHistory[i]));
+
+    const y =
+      height - (height * (plottedTemp / 15));
+
+
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+
+  }
+
+  ctx.stroke();
+}
+
+
+/* ==============================
+   UPDATE SENSOR DISPLAY
+============================== */
+
+function updateDisplay() {
+
+  tempVal.innerText =
+    `${currentTemp.toFixed(2)} °C`;
+
+  humVal.innerText =
+    `${currentHum.toFixed(1)} %`;
+
+  voltVal.innerText =
+    `${currentVolt.toFixed(3)} V`;
+
+  if (
+    currentTemp > MAX_TEMP ||
+    currentTemp < MIN_TEMP
+  ) {
+    tempVal.className = "sensor-value alert";
+  } else {
+    tempVal.className = "sensor-value";
+  }
+}
+
+
+/* ==============================
+   1 Hz TELEMETRY ENGINE
+============================== */
+
+setInterval(() => {
+
+  if (!isExecutingBreach) {
+
+    /* Thermal noise */
+
+    const noise =
+      (Math.random() - 0.48) * 0.15;
+
+    /* Slowly return temperature toward 4°C */
+
+    currentTemp -=
+      (currentTemp - 4.0) * 0.02;
+
+    currentTemp += noise;
+
+
+    /* Humidity noise */
+
+    currentHum +=
+      (Math.random() - 0.5) * 0.2;
+
+    currentHum =
+      Math.max(45, Math.min(65, currentHum));
+
+
+    /* Supercapacitor voltage */
+
+    currentVolt +=
+      (Math.random() - 0.2) * 0.001;
+
+    currentVolt =
+      Math.max(3.20, Math.min(3.40, currentVolt));
+
+  }
+
+
+  updateDisplay();
+
+
+  /* Update history */
+
+  tempHistory.push(currentTemp);
+
+  tempHistory.shift();
+
+  drawChart();
+
+
+  /* Automatic thermal breach */
+
+  if (
+    (currentTemp > MAX_TEMP ||
+     currentTemp < MIN_TEMP) &&
+    !isExecutingBreach
+  ) {
+
+    triggerHardwareBreach(currentTemp);
+
+  }
+
+}, 1000);
+
+
+/* ==============================
+   HARDWARE BREACH SEQUENCE
+============================== */
+
+function triggerHardwareBreach(temp) {
+
+  if (isExecutingBreach) {
+    return;
+  }
+
+  isExecutingBreach = true;
+
+  const isNetLost =
+    document.getElementById("netLossToggle").checked;
+
+
+  log(
+    `[ALERT] Temperature exceeded threshold (${temp.toFixed(2)}°C)!`,
+    "t-alert"
+  );
+
+
+  /* --------------------------------
+     STEP 1 — CRYPTO
+  -------------------------------- */
+
+  setTimeout(() => {
+
+    document.getElementById("dot-crypto")
+      .className = "status-dot purple";
+
+    document.getElementById("box-crypto")
+      .classList.add("active");
+
+    log(
+      "[ATECC608A] Generating ECDSA SECP256R1 Hardware Signature...",
+      "t-crypto"
+    );
+
+  }, 500);
+
+
+  /* --------------------------------
+     STEP 2 — POWER GATE
+  -------------------------------- */
+
+  setTimeout(() => {
+
+    document.getElementById("dot-mosfet")
+      .className = "status-dot red";
+
+    document.getElementById("box-mosfet")
+      .className = "component-box power-on";
+
+    document.getElementById("mosfetText")
+      .innerText =
+      "Gate Pin: PA4 (LOW - MOSFET Conducting)";
+
+    log(
+      "[POWER GATE] AO3401A P-MOSFET Switch CLOSED - Powering SIM7080G",
+      "t-power"
+    );
+
+  }, 1200);
+
+
+  /* --------------------------------
+     STEP 3 — MODEM + AWS PAYLOAD
+  -------------------------------- */
+
+  setTimeout(() => {
+
+    document.getElementById("dot-modem")
+      .className = "status-dot yellow";
+
+    document.getElementById("box-modem")
+      .classList.add("active");
+
+    document.getElementById("modemText")
+      .innerText =
+      "State: ACTIVE TRANSMISSION (220 mA)";
+
+
+    log(
+      "[SIM7080G] Booting Cellular Modem..."
+    );
+
+
+    /*
+      NOTE:
+      This is a simulated ECDSA signature
+      for the Digital Twin demonstration.
+      It is NOT a real cryptographic signature.
+    */
+
+    const simulatedSignature =
+      "0x30440220" +
+      Math.random()
+        .toString(16)
+        .slice(2, 10)
+        .toUpperCase();
+
+
+    const payload = {
+
+      node_id:
+        "SIH_COLDCHAIN_01",
+
+      temp_celsius:
+        Number(temp.toFixed(2)),
+
+      humidity_pct:
+        Number(currentHum.toFixed(1)),
+
+      ecdsa_signature:
+        simulatedSignature,
+
+      network_state:
+        isNetLost
+          ? "OFFLINE_SAVED"
+          : "TRANSMITTED_LIVE"
+
+    };
+
+
+    jsonPreview.innerText =
+      JSON.stringify(payload, null, 2);
+
+
+    /* --------------------------------
+       NETWORK AVAILABLE
+    -------------------------------- */
+
+    if (!isNetLost) {
+
+      log(
+        '[SIM7080G] AT+SMPUB="coldchain/breach",1,1,"{...}"',
+        "t-cloud"
+      );
+
+      log(
+        "[AWS IoT] MQTT Publish CONFIRMED by Cloud!",
+        "t-cloud"
+      );
+
+    }
+
+
+    /* --------------------------------
+       NETWORK LOST
+    -------------------------------- */
+
+    else {
+
+      log(
+        "[SIM7080G] No Cellular Carrier Signal! Routing to EEPROM...",
+        "t-alert"
+      );
+
+      log(
+        "[STORAGE] Telemetry buffered locally at EEPROM address 0x50"
+      );
+
+    }
+
+
+    powerDownSequence();
+
+  }, 2200);
+
+}
+
+
+/* ==============================
+   POWER DOWN
+============================== */
+
+function powerDownSequence() {
+
+  setTimeout(() => {
+
+    /* Reset status LEDs */
+
+    document.getElementById("dot-crypto")
+      .className = "status-dot";
+
+    document.getElementById("dot-mosfet")
+      .className = "status-dot";
+
+    document.getElementById("dot-modem")
+      .className = "status-dot";
+
+
+    /* Reset component boxes */
+
+    document.getElementById("box-crypto")
+      .className = "component-box";
+
+    document.getElementById("box-mosfet")
+      .className = "component-box";
+
+    document.getElementById("box-modem")
+      .className = "component-box";
+
+
+    /* Restore hardware state */
+
+    document.getElementById("mosfetText")
+      .innerText =
+      "Gate Pin: PA4 (HIGH - Modem OFF)";
+
+    document.getElementById("modemText")
+      .innerText =
+      "State: POWERED DOWN (0 mA)";
+
+
+    log(
+      "[POWER GATE] MOSFET Opened. SIM7080G Powered DOWN",
+      "t-power"
+    );
+
+    log(
+      "[SYSTEM] STM32 Re-entering STOP Mode"
+    );
+
+
+    /* Return to normal temperature */
+
+    currentTemp = NORMAL_TEMP;
+
+    currentHum = NORMAL_HUM;
+
+    currentVolt = NORMAL_VOLT;
+
+    tempHistory =
+      Array(30).fill(NORMAL_TEMP);
+
+
+    isExecutingBreach = false;
+
+    updateDisplay();
+
+    drawChart();
+
+
+    jsonPreview.innerText =
+`{
+  "status": "WAITING_FOR_BREACH"
+}`;
+
+
+  }, 2000);
+
+}
+
+
+/* ==============================
+   MANUAL THERMAL SPIKE
+============================== */
+
+document.getElementById("spikeBtn")
+  .addEventListener("click", () => {
+
+    if (isExecutingBreach) {
+      return;
+    }
+
+    currentTemp = 11.5;
+
+    updateDisplay();
+
+    drawChart();
+
+  });
+
+
+/* ==============================
+   RESET DEMO
+============================== */
+
+document.getElementById("resetBtn")
+  .addEventListener("click", () => {
+
+    isExecutingBreach = false;
+
+    currentTemp = NORMAL_TEMP;
+
+    currentHum = NORMAL_HUM;
+
+    currentVolt = NORMAL_VOLT;
+
+    tempHistory =
+      Array(30).fill(NORMAL_TEMP);
+
+
+    /* Reset hardware */
+
+    document.getElementById("dot-crypto")
+      .className = "status-dot";
+
+    document.getElementById("dot-mosfet")
+      .className = "status-dot";
+
+    document.getElementById("dot-modem")
+      .className = "status-dot";
+
+
+    document.getElementById("box-crypto")
+      .className = "component-box";
+
+    document.getElementById("box-mosfet")
+      .className = "component-box";
+
+    document.getElementById("box-modem")
+      .className = "component-box";
+
+
+    document.getElementById("mosfetText")
+      .innerText =
+      "Gate Pin: PA4 (HIGH - Modem OFF)";
+
+    document.getElementById("modemText")
+      .innerText =
+      "State: POWERED DOWN (0 mA)";
+
+
+    jsonPreview.innerText =
+`{
+  "status": "WAITING_FOR_BREACH"
+}`;
+
+
+    updateDisplay();
+
+    drawChart();
+
+    log(
+      "[SYSTEM] Digital Twin manually reset."
+    );
+
+  });
+
+
+/* ==============================
+   INITIALIZATION
+============================== */
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
+
+resizeCanvas();
+
+updateDisplay();
+
+log(
+  "[SYSTEM] Real-Time Hardware Twin Active. 1 Hz Sensor Sampling..."
+);
+
+</script>
+
+</body>
+</html>
+```
